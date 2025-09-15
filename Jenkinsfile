@@ -5,11 +5,14 @@ pipeline {
         timestamps()
     }
 
+    triggers {
+        pollSCM('H/1 * * * *')
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 cleanWs()
-                // Use this when the job is "Pipeline script from SCM"
                 checkout scm
                 powershell 'New-Item -ItemType Directory -Force -Path reports/qa, reports/prod | Out-Null'
             }
@@ -22,9 +25,9 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against QA"
-                    flyway -environment=Test -check.buildEnvironment=Check -outputType=json `
-                      check -changes -drift -code `
-                      -reportFilename=reports/qa/check
+                    flyway -environment=QA "-check.buildEnvironment=Check" -outputType=json `
+                      -reportFilename=reports/qa/check `
+                      check -changes -drift -code
                 '''
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
@@ -43,8 +46,22 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Deploying to QA"
-                    flyway migrate -environment=Test
+                    flyway migrate -environment=QA -dryRunOutput=reports/qa/migrate.dryrun.sql
+
+                    Write-Host "Post deploy drift snapshot on QA"
+                    flyway -environment=QA -outputType=json `
+                      -reportFilename=reports/qa/post_migrate_drift `
+                      check -drift
                 '''
+                archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
+                publishHTML(target: [
+                    reportDir: 'reports/qa',
+                    reportFiles: 'post_migrate_drift.html',
+                    reportName: 'QA Post-migrate Drift',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                ])
             }
         }
 
@@ -55,9 +72,9 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against Prod"
-                    flyway -environment=Prod -check.buildEnvironment=Check -outputType=json `
-                      check -changes -drift -code `
-                      -reportFilename=reports/prod/check
+                    flyway -environment=Prod "-check.buildEnvironment=Check" -outputType=json `
+                      -reportFilename=reports/prod/check `
+                      check -changes -drift -code
                 '''
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
                 publishHTML(target: [
@@ -101,9 +118,8 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Deploying to Prod"
-                    flyway migrate -environment=Prod
-                '''
-            }
-        }
-    }
-}
+                    flyway migrate -environment=Prod -dryRunOutput=reports/prod/migrate.dryrun.sql
+
+                    Write-Host "Post deploy drift snapshot on Prod"
+                    flyway -environment=Prod -outputType=json `
+                      -reportFilename=reports/prod/post_migrate_dr
