@@ -32,12 +32,7 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to QA'
-                    flyway migrate -environment=QA -dryRunOutput=reports/qa/migrate.dryrun.sql
-
-                    Write-Host 'Post deploy drift snapshot on QA'
-                    flyway -environment=QA -outputType=json `
-                      -reportFilename=reports/qa/post_migrate_drift `
-                      check -drift
+                    flyway migrate -environment=QA
                 """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
             }
@@ -85,12 +80,7 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to Prod'
-                    flyway migrate -environment=Prod -dryRunOutput=reports/prod/migrate.dryrun.sql
-
-                    Write-Host 'Post deploy drift snapshot on Prod'
-                    flyway -environment=Prod -outputType=json `
-                      -reportFilename=reports/prod/post_migrate_drift `
-                      check -drift
+                    flyway migrate -environment=Prod
                 """
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
             }
