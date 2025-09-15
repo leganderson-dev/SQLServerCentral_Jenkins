@@ -1,14 +1,17 @@
-SET QUOTED_IDENTIFIER ON
+SET NUMERIC_ROUNDABORT OFF
 GO
-SET ANSI_NULLS ON
+SET ANSI_PADDING, ANSI_WARNINGS, CONCAT_NULL_YIELDS_NULL, ARITHABORT, QUOTED_IDENTIFIER, ANSI_NULLS ON
 GO
-CREATE PROCEDURE [dbo].[LongStoredProc]
+PRINT N'Altering [dbo].[LongStoredProc]'
+GO
+IF OBJECT_ID(N'[dbo].[LongStoredProc]', 'P') IS NOT NULL
+EXEC sp_executesql N'ALTER PROCEDURE [dbo].[LongStoredProc]
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE 
-        @DatabaseName NVARCHAR(130),
+        @DatabaseName NVARCHAR(128),
         @SchemaName NVARCHAR(128),
         @TableName NVARCHAR(128),
         @ColumnName NVARCHAR(128),
@@ -47,18 +50,18 @@ BEGIN
     );
 
     DECLARE db_cursor CURSOR FOR
-    SELECT name FROM sys.databases WHERE state_desc = 'ONLINE';
+    SELECT name FROM sys.databases WHERE state_desc = ''ONLINE'';
 
     OPEN db_cursor;
     FETCH NEXT FROM db_cursor INTO @DatabaseName;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        SET @LogMessage = 'Processing database: ' + @DatabaseName;
+        SET @LogMessage = ''Processing database: '' + @DatabaseName;
         INSERT INTO #Log VALUES (@Now, @LogMessage);
 
-        SET @SQL = '
-        USE [' + @DatabaseName + '];
+        SET @SQL = ''
+        USE ['' + @DatabaseName + ''];
         INSERT INTO #TableDetails
         SELECT 
             s.name AS SchemaName,
@@ -73,7 +76,7 @@ BEGIN
         INNER JOIN sys.columns c ON t.object_id = c.object_id
         INNER JOIN sys.types ty ON c.user_type_id = ty.user_type_id
         LEFT JOIN sys.identity_columns ic ON c.object_id = ic.object_id AND c.column_id = ic.column_id;
-        ';
+        '';
         
         EXEC sp_executesql @SQL;
 
@@ -98,20 +101,20 @@ BEGIN
         -- Logic for column stats
         DECLARE @IsTextColumn BIT = 0;
         DECLARE @IsHighOrdinal BIT = 0;
-        DECLARE @Note NVARCHAR(256) = '';
+        DECLARE @Note NVARCHAR(256) = '''';
 
-        IF @DataType IN ('varchar', 'nvarchar', 'text')
+        IF @DataType IN (''varchar'', ''nvarchar'', ''text'')
         BEGIN
             SET @IsTextColumn = 1;
-            SET @Note = 'Text column';
-            PRINT 'Text column: ' + @ColumnName;
+            SET @Note = ''Text column'';
+            PRINT ''Text column: '' + @ColumnName;
         END
 
         IF @Ordinal > 10
         BEGIN
             SET @IsHighOrdinal = 1;
-            SET @Note = CONCAT(@Note, ' | High Ordinal');
-            PRINT 'Column has high ordinal position: ' + @ColumnName;
+            SET @Note = CONCAT(@Note, '' | High Ordinal'');
+            PRINT ''Column has high ordinal position: '' + @ColumnName;
         END
 
         INSERT INTO #ColumnStats
@@ -126,7 +129,7 @@ BEGIN
         END
 
         -- Log each row
-        SET @LogMessage = 'Processed column ' + @ColumnName + ' from table ' + @TableName;
+        SET @LogMessage = ''Processed column '' + @ColumnName + '' from table '' + @TableName;
         INSERT INTO #Log VALUES (GETDATE(), @LogMessage);
 
         FETCH NEXT FROM table_cursor 
@@ -140,7 +143,7 @@ BEGIN
     DECLARE @TextColumnCount VARCHAR(10);
     SELECT @TextColumnCount = COUNT(*) FROM #ColumnStats WHERE IsTextColumn = 1;
 
-    PRINT 'Text columns found: ' + CAST(@TextColumnCount AS NVARCHAR);
+    PRINT ''Text columns found: '' + CAST(@TextColumnCount AS NVARCHAR);
 
     -- Output stats
     SELECT TOP 10 * FROM #ColumnStats ORDER BY SchemaName, TableName;
@@ -158,7 +161,7 @@ BEGIN
     SELECT * FROM #SchemaSummary;
 
     -- Cleanup and final log
-    SET @LogMessage = 'Total columns processed: ' + CAST(@Counter AS NVARCHAR);
+    SET @LogMessage = ''Total columns processed: '' + CAST(@Counter AS NVARCHAR);
     INSERT INTO #Log VALUES (GETDATE(), @LogMessage);
 
     -- Output final log
@@ -177,7 +180,18 @@ BEGIN
     DROP TABLE #TableDetails;
     DROP TABLE #SchemaSummary;
 
-    PRINT 'Demo_LongStoredProc_Double completed.';
+    PRINT ''Demo_LongStoredProc_Double completed.'';
 
 END;
+'
 GO
+
+SET NUMERIC_ROUNDABORT OFF
+GO
+SET ANSI_PADDING, ANSI_WARNINGS, CONCAT_NULL_YIELDS_NULL, ARITHABORT, QUOTED_IDENTIFIER, ANSI_NULLS, NOCOUNT ON
+GO
+SET DATEFORMAT YMD
+GO
+SET XACT_ABORT ON
+GO
+
