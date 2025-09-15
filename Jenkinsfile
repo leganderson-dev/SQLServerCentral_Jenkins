@@ -9,17 +9,22 @@ pipeline {
         stage('Checkout') {
             steps {
                 cleanWs()
+                // Use this when the job is "Pipeline script from SCM"
                 checkout scm
                 powershell 'New-Item -ItemType Directory -Force -Path reports/qa, reports/prod | Out-Null'
             }
         }
+
+        /* ====================== QA ====================== */
 
         stage('QA - Validate & Checks') {
             steps {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against QA"
-                    flyway check -changes -drift -code -environment=Test -buildEnvironment=Check -reportFilename=reports/qa/check.html
+                    flyway -environment=Test -check.buildEnvironment=Check -outputType=json `
+                      check -changes -drift -code `
+                      -reportFilename=reports/qa/check
                 '''
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
@@ -43,14 +48,16 @@ pipeline {
             }
         }
 
+        /* ===================== PROD ===================== */
+
         stage('Prod - Validate & Checks') {
             steps {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against Prod"
-                    flyway -environment=Prod -check.buildEnvironment=Check `
+                    flyway -environment=Prod -check.buildEnvironment=Check -outputType=json `
                       check -changes -drift -code `
-                      -reportFilename=reports/prod/check.html
+                      -reportFilename=reports/prod/check
                 '''
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
                 publishHTML(target: [
