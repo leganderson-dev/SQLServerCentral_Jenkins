@@ -3,7 +3,6 @@ pipeline {
 
     options { timestamps() }
 
-    // If this job is "Pipeline script from SCM", you can keep polling.
     triggers { pollSCM('H/1 * * * *') }
 
     stages {
@@ -15,26 +14,16 @@ pipeline {
             }
         }
 
-        /* ====================== QA ====================== */
-
         stage('QA - Validate & Checks') {
             steps {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Flyway validate & checks against QA'
-                    flyway -environment=Test "-check.buildEnvironment=Check" -outputType=json `
+                    flyway -environment=QA "-check.buildEnvironment=Check" -outputType=json `
                       -reportFilename=reports/qa/check `
                       check -changes -drift -code
                 """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/qa',
-                    reportFiles: 'check.html',
-                    reportName: 'QA Flyway Check',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
 
@@ -43,26 +32,16 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to QA'
-                    flyway migrate -environment=Test -dryRunOutput=reports/qa/migrate.dryrun.sql
+                    flyway migrate -environment=QA -dryRunOutput=reports/qa/migrate.dryrun.sql
 
                     Write-Host 'Post deploy drift snapshot on QA'
-                    flyway -environment=Test -outputType=json `
+                    flyway -environment=QA -outputType=json `
                       -reportFilename=reports/qa/post_migrate_drift `
                       check -drift
                 """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/qa',
-                    reportFiles: 'post_migrate_drift.html',
-                    reportName: 'QA Post-migrate Drift',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
-
-        /* ===================== PROD ===================== */
 
         stage('Prod - Validate & Checks') {
             steps {
@@ -74,14 +53,6 @@ pipeline {
                       check -changes -drift -code
                 """
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/prod',
-                    reportFiles: 'check.html',
-                    reportName: 'Prod Flyway Check',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
 
@@ -122,14 +93,6 @@ pipeline {
                       check -drift
                 """
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/prod',
-                    reportFiles: 'post_migrate_drift.html',
-                    reportName: 'Prod Post-migrate Drift',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
     }
