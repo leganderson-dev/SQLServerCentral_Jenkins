@@ -22,7 +22,7 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Flyway validate & checks against QA'
-                    flyway -environment=QA "-check.buildEnvironment=Check" -outputType=json `
+                    flyway -environment=Test "-check.buildEnvironment=Check" -outputType=json `
                       -reportFilename=reports/qa/check `
                       check -changes -drift -code
                 """
@@ -43,10 +43,10 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to QA'
-                    flyway migrate -environment=QA -dryRunOutput=reports/qa/migrate.dryrun.sql
+                    flyway migrate -environment=Test -dryRunOutput=reports/qa/migrate.dryrun.sql
 
                     Write-Host 'Post deploy drift snapshot on QA'
-                    flyway -environment=QA -outputType=json `
+                    flyway -environment=Test -outputType=json `
                       -reportFilename=reports/qa/post_migrate_drift `
                       check -drift
                 """
