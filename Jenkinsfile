@@ -1,13 +1,10 @@
 pipeline {
     agent { label 'windows' }
 
-    options {
-        timestamps()
-    }
+    options { timestamps() }
 
-    triggers {
-        pollSCM('H/1 * * * *')
-    }
+    // If this job is "Pipeline script from SCM", you can keep polling.
+    triggers { pollSCM('H/1 * * * *') }
 
     stages {
         stage('Checkout') {
@@ -22,13 +19,13 @@ pipeline {
 
         stage('QA - Validate & Checks') {
             steps {
-                powershell '''
-                    $ErrorActionPreference = 'Stop'
-                    Write-Host "Flyway validate & checks against QA"
+                powershell """
+                    \$ErrorActionPreference = 'Stop'
+                    Write-Host 'Flyway validate & checks against QA'
                     flyway -environment=QA "-check.buildEnvironment=Check" -outputType=json `
                       -reportFilename=reports/qa/check `
                       check -changes -drift -code
-                '''
+                """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
                     reportDir: 'reports/qa',
@@ -43,16 +40,16 @@ pipeline {
 
         stage('QA - Migrate') {
             steps {
-                powershell '''
-                    $ErrorActionPreference = 'Stop'
-                    Write-Host "Deploying to QA"
+                powershell """
+                    \$ErrorActionPreference = 'Stop'
+                    Write-Host 'Deploying to QA'
                     flyway migrate -environment=QA -dryRunOutput=reports/qa/migrate.dryrun.sql
 
-                    Write-Host "Post deploy drift snapshot on QA"
+                    Write-Host 'Post deploy drift snapshot on QA'
                     flyway -environment=QA -outputType=json `
                       -reportFilename=reports/qa/post_migrate_drift `
                       check -drift
-                '''
+                """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
                     reportDir: 'reports/qa',
@@ -69,13 +66,13 @@ pipeline {
 
         stage('Prod - Validate & Checks') {
             steps {
-                powershell '''
-                    $ErrorActionPreference = 'Stop'
-                    Write-Host "Flyway validate & checks against Prod"
+                powershell """
+                    \$ErrorActionPreference = 'Stop'
+                    Write-Host 'Flyway validate & checks against Prod'
                     flyway -environment=Prod "-check.buildEnvironment=Check" -outputType=json `
                       -reportFilename=reports/prod/check `
                       check -changes -drift -code
-                '''
+                """
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
                 publishHTML(target: [
                     reportDir: 'reports/prod',
@@ -96,13 +93,12 @@ pipeline {
                         def userInput = input(
                             id: 'userInput',
                             message: message,
-                            parameters: [
-                                text(
-                                    defaultValue: 'I Approve The Deployment',
-                                    description: 'To Proceed, type I Approve The Deployment',
-                                    name: 'Review deployment artifacts before proceeding'
-                                )
-                            ]
+                            parameters: [[
+                                $class: 'TextParameterDefinition',
+                                defaultValue: 'I Approve The Deployment',
+                                description: 'To Proceed, type I Approve The Deployment',
+                                name: 'Review deployment artifacts before proceeding'
+                            ]]
                         )
                         if (!userInput.contains('I Approve The Deployment')) {
                             currentBuild.result = 'ABORTED'
@@ -115,11 +111,26 @@ pipeline {
 
         stage('Prod - Migrate') {
             steps {
-                powershell '''
-                    $ErrorActionPreference = 'Stop'
-                    Write-Host "Deploying to Prod"
+                powershell """
+                    \$ErrorActionPreference = 'Stop'
+                    Write-Host 'Deploying to Prod'
                     flyway migrate -environment=Prod -dryRunOutput=reports/prod/migrate.dryrun.sql
 
-                    Write-Host "Post deploy drift snapshot on Prod"
+                    Write-Host 'Post deploy drift snapshot on Prod'
                     flyway -environment=Prod -outputType=json `
-                      -reportFilename=reports/prod/post_migrate_dr
+                      -reportFilename=reports/prod/post_migrate_drift `
+                      check -drift
+                """
+                archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
+                publishHTML(target: [
+                    reportDir: 'reports/prod',
+                    reportFiles: 'post_migrate_drift.html',
+                    reportName: 'Prod Post-migrate Drift',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                ])
+            }
+        }
+    }
+}
