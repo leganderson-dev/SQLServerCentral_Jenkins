@@ -19,9 +19,9 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against QA"
-                    flyway -environment=QA -outputType=json `
+                    flyway -environment=Test -check.buildEnvironment=Check `
                       check -changes -drift -code `
-                      -reportFilename=reports/qa/check
+                      -reportFilename=reports/qa/check.html
                 '''
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
@@ -40,22 +40,8 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Deploying to QA"
-                    flyway -environment=QA migrate -dryRunOutput=reports/qa/migrate.dryrun.sql
-
-                    Write-Host "Post deploy drift snapshot on QA"
-                    flyway -environment=QA -outputType=json `
-                      check -drift `
-                      -reportFilename=reports/qa/post_migrate_drift
+                    flyway migrate -environment=Test
                 '''
-                archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/qa',
-                    reportFiles: 'post_migrate_drift.html',
-                    reportName: 'QA Post-migrate Drift',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
 
@@ -64,9 +50,9 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against Prod"
-                    flyway -environment=Prod -outputType=json `
+                    flyway -environment=Prod -check.buildEnvironment=Check `
                       check -changes -drift -code `
-                      -reportFilename=reports/prod/check
+                      -reportFilename=reports/prod/check.html
                 '''
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
                 publishHTML(target: [
@@ -110,22 +96,8 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Deploying to Prod"
-                    flyway -environment=Prod migrate -dryRunOutput=reports/prod/migrate.dryrun.sql
-
-                    Write-Host "Post deploy drift snapshot on Prod"
-                    flyway -environment=Prod -outputType=json `
-                      check -drift `
-                      -reportFilename=reports/prod/post_migrate_drift
+                    flyway migrate -environment=Prod
                 '''
-                archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
-                publishHTML(target: [
-                    reportDir: 'reports/prod',
-                    reportFiles: 'post_migrate_drift.html',
-                    reportName: 'Prod Post-migrate Drift',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
             }
         }
     }
