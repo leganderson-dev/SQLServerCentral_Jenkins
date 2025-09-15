@@ -1,0 +1,28 @@
+{
+  "individualResults" : [ {
+    "timestamp" : "2025-09-15T23:39:00.4598951",
+    "operation" : "changes",
+    "exception" : null,
+    "licenseFailed" : false,
+    "onlyInSource" : [ ],
+    "onlyInTarget" : [ ],
+    "differences" : [ ],
+    "database" : "SSC_QA"
+  }, {
+    "timestamp" : "2025-09-15T23:39:00.4598951",
+    "operation" : "drift",
+    "exception" : null,
+    "licenseFailed" : false,
+    "onlyInSource" : [ ],
+    "onlyInTarget" : [ ],
+    "differences" : [ ],
+    "database" : "SSC_QA",
+    "driftDetected" : false
+  }, {
+    "timestamp" : "2025-09-15T23:39:00.4598951",
+    "operation" : "code",
+    "exception" : null,
+    "licenseFailed" : false,
+    "results" : [ ]
+  } ]
+}
