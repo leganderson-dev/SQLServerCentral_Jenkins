@@ -19,9 +19,7 @@ pipeline {
                 powershell '''
                     $ErrorActionPreference = 'Stop'
                     Write-Host "Flyway validate & checks against QA"
-                    flyway -environment=Test -check.buildEnvironment=Check `
-                      check -changes -drift -code `
-                      -reportFilename=reports/qa/check.html
+                    flyway check -changes -drift -code -environment=Test -buildEnvironment=Check -reportFilename=reports/qa/check.html
                 '''
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
                 publishHTML(target: [
