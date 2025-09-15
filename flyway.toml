@@ -144,7 +144,7 @@ provisioner = "clean"
 [environments.Prod]
 url = "jdbc:sqlserver://localhost;databaseName=ssc_prod;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
 
-[environments.Test]
+[environments.QA]
 url = "jdbc:sqlserver://localhost;databaseName=SSC_QA;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
 
 [environments.Check]
