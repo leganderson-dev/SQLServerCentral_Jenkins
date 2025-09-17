@@ -133,7 +133,7 @@ transportClrDataTypesAsBinary = false
   table = "CountryCodes"
 
 [environments.development]
-url = "jdbc:sqlserver://localhost;databaseName=ssc_dev;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+url = "jdbc:sqlserver://localhost;databaseName=ssc_empty;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
 displayName = "Development database"
 
 [environments.shadow]
