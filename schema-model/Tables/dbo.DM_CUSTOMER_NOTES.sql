@@ -4,7 +4,8 @@ CREATE TABLE [dbo].[DM_CUSTOMER_NOTES]
 [customer_firstname] [varchar] (60) NULL,
 [customer_lastname] [varchar] (60) NULL,
 [customer_notes_entry_date] [datetime] NOT NULL,
-[customer_note] [varchar] (1000) NULL
+[customer_note] [varchar] (1000) NULL,
+[status] [int] NULL
 )
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [cnInd1] ON [dbo].[DM_CUSTOMER_NOTES] ([customer_id], [customer_notes_entry_date])
