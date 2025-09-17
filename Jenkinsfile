@@ -32,7 +32,7 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to QA'
-                    flyway migrate -environment=QA
+                    flyway info migrate info  -environment=QA
                 """
                 archiveArtifacts artifacts: 'reports/qa/**', onlyIfSuccessful: true
             }
@@ -80,7 +80,7 @@ pipeline {
                 powershell """
                     \$ErrorActionPreference = 'Stop'
                     Write-Host 'Deploying to Prod'
-                    flyway migrate -environment=Prod
+                    flyway info migrate info -environment=Prod
                 """
                 archiveArtifacts artifacts: 'reports/prod/**', onlyIfSuccessful: true
             }
