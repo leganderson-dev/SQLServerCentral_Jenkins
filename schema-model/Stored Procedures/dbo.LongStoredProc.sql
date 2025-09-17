@@ -9,7 +9,7 @@ BEGIN
 
     DECLARE 
         @DatabaseName NVARCHAR(130),
-        @SchemaName NVARCHAR(128),
+        @SchemaName NVARCHAR(130),
         @TableName NVARCHAR(128),
         @ColumnName NVARCHAR(128),
         @SQL NVARCHAR(MAX),
